@@ -1,8 +1,0 @@
-Peak 1														
-	Area	7297.29	Position (Coef.)	164.15	Width (Coef.)	0.789	Gauss-Lorentz Ratio	0.3	Asymmetry (coef)	1.0000e-03	Asymmetry translation (coef)	1.0000e-03		
-			Effective Position	164.13	Effective Width	0.789			Effective Asymmetry:	     0.000 				
-									1 - (fwhm_right)/(fwhm_left):					
-Peak 2														
-	Area	3676.55	Position (Coef.)	165.35	Width (Coef.)	0.786	Gauss-Lorentz Ratio	0.3	Asymmetry (coef)	1.0000e-03	Asymmetry translation (coef)	1.0000e-03		
-			Effective Position	165.36	Effective Width	0.786			Effective Asymmetry:	     0.000 				
-									1 - (fwhm_right)/(fwhm_left):					
