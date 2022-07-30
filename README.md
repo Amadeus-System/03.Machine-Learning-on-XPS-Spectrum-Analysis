@@ -3,6 +3,8 @@ Repository for my undergraduate paper for Machine learning analysis of XPS spect
 
 We've published two papers related to XPS spectrum analysis via Deep Neural Networks.
 
+* https://lelouch0316.tistory.com/entry/Deep-Learning-Applied-to-Peak-Fitting-of-Spectroscopic-Data-in-Frequency-Domain?category=1076241
+* https://lelouch0316.tistory.com/entry/Iterative-Peak-Fitting-of-Frequency-Domain-Data-via-Deep-Convolution-Neural-Networks?category=1076241
 
 
 **[계속 수정중인 글입니다.]**
