@@ -1,431 +1,280 @@
 # 03.Machine-learning-on-XPS-spectrum
 Repository for my undergraduate paper for Machine learning analysis of XPS spectrum
 
-We've published two papers related to XPS spectrum analysis via Deep Neural Networks.
+https://lelouch0316.tistory.com/entry/Iterative-Peak-Fitting-of-Frequency-Domain-Data-via-Deep-Convolution-Neural-Networks?category=1076241
 
-* https://lelouch0316.tistory.com/entry/Deep-Learning-Applied-to-Peak-Fitting-of-Spectroscopic-Data-in-Frequency-Domain?category=1076241
-* https://lelouch0316.tistory.com/entry/Iterative-Peak-Fitting-of-Frequency-Domain-Data-via-Deep-Convolution-Neural-Networks?category=1076241
+* **Date : 2022-01-02**
+* **Last Modified At : 2022-06-27**
 
-
-**[계속 수정중인 글입니다.]**
-  
-# 글을 시작하며
-
-이번 포스팅에서는, 내가 학부졸업을 유예하고 한 학기 동안 지금의 연구실에서 외부협력연구원으로 연구했었던 XPS 스펙트럼 분석에 관해 소개하고자 한다.
-
-**사실 냉정히 말해서 이 연구는 망한 연구이다.** 국문으로 쓰여진 논문들을 무시하는 것은 아니지만, 결코 높은 수준의 논문이라고 말할 수 없고, 실제로도 연구결과가 좋지 않았다.
-
-당시의 나는 졸업논문을 위한 연구를 한 번 해본 경험이 전부였기 때문에, 이 경험은 공식적으로 기록을 남기는 최초의 연구경험이라고 할 수 있었다. 연구가 진행되는 동안 낯선 분야인 XPS와 관련된 많은 논문을 읽었고, 더 깊은 수준의 프로그래밍을 경험할 수 있었다. 유명한 딥러닝 프레임워크인 Tensorflow가 이 당시에는 버전 1으로 있었는데, 텐서플로우 버전 1은 요즘 자주 쓰이는 버전 2에 비해 조금 더 문법적으로 어려웠다. 그래서 나는 Keras라는 High-level Interface를 사용했는데, 하나의 딥러닝 프레임워크를 6개월 동안 몰입해서 사용한 경험은 확실히 내 실력을 한층 성장시켜주었다.
-
-그러한 경험을 이번 포스팅에서 간단히 소개하고자 한다.
-
-
-# Deep Learning Applied to Peak Fitting of Spectroscopic Data in Frequency Domain
-
-![XPS_PHYSICS](https://user-images.githubusercontent.com/76824867/159117886-4eeac17d-02d2-433d-84d1-87a98c37b669.png)
-
-
-## Abstract
-
-2016년 알파고와 이세돌의 기념비적인 대국 이후로, 학계 및 산업계 전반에서도 인공지능이나 데이터 사이언스와 같은 신기술을 이용하여 각 분야에서 급격한 기술발전을 이루려는 움직임이 나타났다. 
-
-특히 물리학과 화학, 그리고 재료공학과 같이 물질의 특성을 연구하고 유용한 신물질을 탐색하는 것을 주 연구주제로 하는 분야에서도, 그 동안 축적된 실험데이터와 딥러닝 기술을 이용하여 보다 효과적인 연구를 수행하고자 했다.
-
-이를 위해 필수적인 요소 중 하나는 바로 대량의 실험적 분광학 데이터와 제일원리 전자구조계산 결과들이었다. 이러한 대규모 데이터와 딥러닝 모델이 결합함으로써, 최소한의 인간의 개입만으로 (즉, 최소한의 도메인 지식만으로) 방대한 물질조합에 대한 특성 추출을 자동화할 수 있는 High-Throughput Material Screening 이라는 연구분야가 확대되기 시작했다.
-
-이러한 작업의 특수한 케이스로, 1차원 진동수(Frequency) 영역에서의 광전자분광학(Photoemission Spectroscopy, PES) 실험결과들을 입력받아, 이로부터 전자의 여기에너지, 여기 상태의 수와 각 PES Peak의 에너지 폭을 얻어내는 딥러닝 모델을 만들고 그 성능을 테스트하는 연구를 시도했었다. 
-
-즉, XPS라는 특정한 실험물리학 분야에 대해 대규모 물질 스크리닝 작업을 가능케하는 딥러닝 모델을 구현하고자 하였다.
-
-딥러닝 모델링 과정에서는 1차원 합성곱 신경망(Convolutional Neural Network, CNN)가 사용되었고, 훈련된 모델은 Poly(3-hexylthiophene) (P3HT) 분자 안의 황의 2p 상태 및 인듐 주석 산화물 내 산소의 1s 상태로부터의 PES 스펙트럼을 분석하는데 사용되었다. 
-
----
-
-## 1. 서론
-
-### XPS란 무엇일까?
-
-연구에 대해 설명하기 전에 먼저 XPS가 무엇인지 설명해야 할 것 같다.
-
-광전자분광학(X-ray Photoelectron Spectroscopy, XPS)는 기본적으로 물질의 표면특성을 실험적으로 조사하기 위한 방법론이다.
-
-![XPS Configuration](https://user-images.githubusercontent.com/76824867/159118641-c818f2b5-5edb-4825-9486-f6e48ac5b249.png)
-
-위 그림과 같이 높은 에너지를 갖는 전자기파를 물질의 표면에 조사하면, 물질 표면의 원자와 전자의 결합이 깨지면서 표면 밖으로 탈출하는 전자가 발생할 수 있다. 물리학에서는 이를 광전효과(Photoelectric Effect)라 한다. 이 때 표면 밖으로 나오는 전자는 빛(전자기파)에 의해 여기된(Excited) 상태이기 때문에, 물질 내부의 전자보다 더 높은 에너지를 갖고 있고 이를 Photoelectron(광전자)이라 한다. XPS 실험에서는 이러한 광전자를 특수한 Detector가 감지하여 시간당 방출되는 전자의 수를 측정함으로써, 물질 표면에 어떠한 결합이 존재하고 있었는가에 대한 다양한 정보를 얻을 수 있게 된다.
-
-![Energy Relations](https://user-images.githubusercontent.com/76824867/159118647-197b26b2-62f1-4ba9-aab5-3853bf7d33ea.png)
-
-위 그림을 보면 알 수 있듯이, 본래 물질 표면의 전자들은 대부분 안정된 에너지 상태로 결합되어 있다. 그러나 외부에서 전자기파의 형태로 에너지가 들어오면, 일부 전자들은 그 에너지를 받아 원자로부터의 속박을 끊고 물질 밖으로 탈출할 수 있게 된다. 보통 XPS 실험에서 알고자 하는 것은 물질 표면에 속박되어 있던 전자의 결합에너지(Binding Energy)이다.
-
-외부에서 전자기파의 형태로 투입되는 에너지의 양은 아인슈타인의 광전효과 이론에 의해 $E = hf$ 형태로 주어진다. 우리는 실험장비를 통해 전자기파를 발생시키는 Source의 종류와 진동수(Frequency)를 이미 알고 있기 때문에, 전자기파의 에너지는 이미 알고 있는 정보가 된다. 그리고 입자의 운동에너지(Kinetic Energy)는 물질 밖에서 대기 중인 감지기(Detector)에 의해 측정된다. 나는 XPS를 전문적으로 연구하지 않기 때문에 잘 모르지만, 일반적으로 감지된 광전자를 전류로 환원시켜 광전류의 세기를 측정함으로써 간접적으로 시간당 방출되는 광전자의 수를 측정할 수 있다고 알고 있다. 결과적으로 광전자의 운동에너지에 대한 정보도 알 수 있기 때문에, 위 수식에서 보이는 것처럼 $E_{binding} = h\nu - E_{kinetic}$으로 결합에너지는 (전자기파의 에너지 - 운동에너지)가 되어 우리는 원래는 몰랐던 물질 표면의 결합에너지를 XPS 실험을 통해 알 수 있게 된다.
-
-![XPS Spectrum](https://user-images.githubusercontent.com/76824867/159118649-6bd929c5-c43c-456b-8955-47128cf57233.png)
-
-XPS 실험의 결과는 보통 위 그림과 같은 스펙트럼의 형태로 얻어지는데, 스펙트럼 그래프를 보면 다양한 전자의 Binding Energy 또는 Kinetic Energy 레벨에 따른 전자의 Intensity (시간당 방출되는 광전자 수)를 얻을 수 있다. 여기서 중요한 것은 어떤 에너지 레벨에서 특정한 Peak가 존재하는가를 판별하는 것이다. 위 그림에서 보면 다양한 Peak 위치에서 특정한 종류의 원자의 특정한 오비탈(Orbital, 전자의 파동함수) 결합이 있었음이 표시되어 있다. 표면실험을 전문으로 하지 않아서 잘 모르지만, 관련분야 대학원생의 말을 들어보면, 저 Peak와 관련된 정보를 잘 추출해내어 분석하는 것이 중요하다고 한다.
-
-그리고 당시에 교수님께서 내게 주셨던 것은 바로.. 그러한 1차원 스펙트럼 데이터를 딥러닝 모델로 학습시켜, 스펙트럼 데이터에서 일반적으로 얻어져야 하는 Energy Peak에 관한 여러 정보를 추출하는 것이었다. 즉, 우리가 어떤 딥러닝 모델 F를 갖고 있다면, 그것은 아래와 같이 주어진 Spectrum 그래프에 대하여 여러 종류의 단일 Peak 그래프로 분해(Decomposition)해야 한다. 즉, 일종의 Fitting 문제를 풀어야 한다.
-
-![Objective](https://user-images.githubusercontent.com/76824867/159118650-61353016-8abb-4f3e-b27c-a6c219328a37.png)
-
-사실 연구 초기에 이 문제는 어려울 것이라 생각했다. 왜냐하면 일단 그래프를 Fitting한다는 것은, 결국 특정한 포인트 또는 영역에서 Y 값의 분해를 한다는 뜻인데, 여러 Y 값들이 있을 때 그것을 합치는 것은 일방통행적인 연산이지만, 그 역연산은 마치 중학교때 배웠던 부정방정식을 푸는 것과 같아서, 답이 여러가지이기 때문이다.
-
-물론, 실제로는 아주 불가능한 것은 아니고, XPS 데이터가 Fitting되는 어느정도 전형적인 상황들이 있었기 때문에, 그러한 상황들을 단서조건으로 달고 딥러닝 모델을 학습시킬 수는 있었다. 그리고 사실 테스트 데이터까지는 아주 결과가 나쁜 것도 아니었다.
-
-다음 결과들은 연구 초기에 간단히 만들었던 딥러닝 모델이 Synthetic XPS 데이터로 학습되었을 때, 일부 Convolution 레이어의 1차원 필터와 Input의 변화를 시각화한 것이다.
-
-![1st Filter Visualization](https://user-images.githubusercontent.com/76824867/159118651-35f9f178-1d0e-46e1-b5d2-5ac6bfb8a9aa.png)
-![Result of 1st layer](https://user-images.githubusercontent.com/76824867/159118652-6655cf7c-da72-436f-ab79-4cd5ab1fb132.png)
-![2nd Filter Visualization](https://user-images.githubusercontent.com/76824867/159118654-eeab7aaf-70d9-4e8c-95cf-e5acb6f269ab.png)
-![Result of 2nd layer](https://user-images.githubusercontent.com/76824867/159118655-f6592e21-41f7-4abd-9a95-075118765774.png)
-
-특정한 필터에서 Input Signal의 일부 Peak 정보들이 계산되고 있음을 어느정도 추측할 수 있었다. 그리고 사실 이 단계에서는 꽤나 연구가 잘 될 것이라 믿었다.
-
-
-## 본론 : 계산 방법론, 결과 및 논의
-
-### 1. 계산 방법론 및 도구
-
-실제 연구에서는 신경망 모델링과 학습을 위해 고수준 딥러닝 라이브러리인 Keras 프레임워크를 사용하였다. Keras는 Tensorflow Backend 위에서 작동하는 딥러닝 프레임워크로 딥러닝 프로젝트에서 자주 하게 되는 고차원의 텐서연산 및 신경망 모델생성, 학습을 쉽게 수행할 수 있게 해준다. 초기 단계에서의 연구는 Google에서 무료로 제공되는 Colab 환경을 이용하였지만, 이후 연구가 진행되면서 계산량이 많아져서 연구실에서 자체적으로 보유한 Work Station 서버를 활용하게 되었다.
-
-ITO 및 P3HT의 X선 PES 실험을 위해서는 K-Alpha+ (Thermo Fisher Scientific Co.) 시스템을 사용하였으며, 코어 레벨 스펙트럼을 얻기 위해 Al K$\alpha$ X선 광원이 ($h\nu$ = 1486.6 eV) 사용되었다.
-
-![Fig. 1.](https://user-images.githubusercontent.com/76824867/149633934-91db6300-5fac-448e-a8df-5e6867e83487.png)
-
-위 그림(a)는 3종류의 Pseudo-Voigt Peaks로 구성된 Synthetic Training 데이터셋의 예시를 보여준다. 빨강색, 파랑색, 초록색의 점선들은 각각의 Pseudo-Voigt peak와 noise가 섞인 신호를 의미한다. 검정색 실선은 모든 신호의 합이다. 그림(b)는 3개의 Synthetic Training Signal을 보여준다.
-
-
-### 2. 모델 훈련을 위한 인공 데이터 생성
-
-인공 신경망 학습에 요구되는 막대한 양의 데이터에 비해서, 실제 XPS 실험에서 얻을 수 있는 데이터의 양에는 한계가 있었다. 따라서, 본 연구에 있어서 가장 먼저 요구되는 것은 신경망의 학습을 위한 대규모 훈련 데이터의 생성이었다. 이를 위해서, X선 회절 또는 PES에서의 개개의 여기 Peak를 Fitting하는데 널리 사용되는 유사 Voigt 함수를 사용하였으며, 실제 에너지 피크를 생성하는데 사용한 함수는 다음과 같았다.
-
-$$ f(\omega; \omega\_{0}, I_{0}, w) = 0.7 e^{-\frac {w_{G}^{2} (\omega - \omega_{0})^{2}} {w^{2}}} + 0.3 \frac {1} {1 + \frac {w_{L}^{2} (\omega - \omega_{0})^{2}} {w^{2}} } $$
-
-위 식에서 $\omega$는 진동수이고, $w_{G}$ = 1.634, $w_{L}$ = 2.195로 고정되었다. 
-
-따라서 위 식에 의해 만들어지는 피크는 최대 세기 $I_{0}$, 피크의 폭을 나타내는 단일 변수 $w$, 그리고 피크의 위치인 $\omega_{0}$ 3개의 변수로 나타낼 수 있으며, 일정 구간 내에서 이 3개의 변수를 무작위로 생성하여 피크가 생성되었다.
-
-이 때, 실제 실험에서 발생할 수 있는 피크 모양의 좌우 비대칭성은 고려하지 않았다. 개개의 훈련 데이터는 진동수 구간 내에서 최대 13개의 피크를 가지고, 피크의 개수 또한 무작위가 되도록 설정되었다. 마지막으로, $I_{0}$의 최대 5% 정도의 노이즈를 더하여 실제 실험에서 발생하는 노이즈 효과를 모방하였다.
-
-다만, 실제 측정에서 발생할 수 있는 배경(Background Signal) 값은 무시하였다. 배경값을 포함한 1차원 진동수 영역에서의 신호 처리 또한 CNN 방법론을 통해 효과적으로 수행될 수 있음이 밝혀져 있었기 때문에, 이에 대해서는 고민하지 않고 넘어갈 수 있었다.
-
-학습을 위하여 진동수 $\omega$는 $\omega_{i} (0 \le i \le 400)$ 의 값들로 이산화되어, 기계학습을 위해 입력되는 데이터는 ${f_n(w_i)}$ 의 벡터로서 표현될 수 있었다. ($1 \le n \le N$, $N$은 학습 데이터셋 내 데이터 총 수)
-
-
-### 3. 학습을 위한 심층 신경망 모델 구조 설정 및 훈련
-
-다음 단계로서, 훈련의 대상이 되는 신경망의 구조를 설정해야 했다. 심층 신경망 모델 중 CNN이 사진이나 동영상 등 2차원 화상의 특성 추출에 매우 뛰어난 성능을 보인다는 점에 착안하여, 연구에서는 PES 스펙트럼을 1차원 데이터로 간주하고 신경망 모델의 데이터 입력 부분에 여러 겹의 CNN 배열을 적용하였다. 
-
-신경망의 앞 부분에는 Conv1D (1차원 합성곱) 및 MaxPooling1D (데이터 크기를 $\frac {1}{2}$로 줄이는 다운샘플링) 층이 3중으로 배치되어 입력 데이터의 차원을 효과적으로 축소하는 한 편 적절한 깊이의 특성 추출이 효과적으로 이루어질 수 있도록 하였다.
-
-다음 단계로서 GlobalMaxPooling1D(전역적 맥스풀링) 층을 사용하여 추출된 특성값들을 1차원 벡터로서 변환 후, 해당 특성값 벡터를 입력받아 원하는 4종류의 목표변수인 스펙트럼 내 피크 수, 각 피크의 세기 $I_{0}$, 중심 위치 $\omega_{0}$, 그리고 에너지 폭 $w$을 추출 및 출력하는 FCL 층 4개를 연결하였다.
-
-여기에서 스펙트럼 내 피크 수 및 각 피크의 중심 위치들은 나머지 변수들을 예측하는데 필요한 정보이기 때문에, 이 두 값들은 먼저 추출되어 각 피크 세기와 에너지 폭을 추출해내는 FCL 층의 입력값으로 Batch Normalization 층을 거쳐 제공되도록 하였다.
-
-모든 층에서의 활성화 함수는 ReLU (Rectified Linear Unit) 함수를 사용하였다. 참고로, 본 연구에서는 피크의 수가 최대 3개인 데이터들을 생성하여 모델을 훈련하였으며, 피크 수가 이보다 작은 데이터의 경우 목표 변수들의 값들이 피크 수 만큼만 예측되고 나머지는 0으로 출력되도록 모델을 학습하였다.
-
-![Fig. 2.](https://user-images.githubusercontent.com/76824867/149633995-d903fc9a-4d99-4afc-8cb3-cd95c53c5aba.png)
-
-모델 훈련을 위한 총 입력 데이터 수는 2천만개, 그리고 학습을 위한 에포크 수는 200개로 조정하였으며, 모델 가중치 최적화를 위해서는 Adam 알고리즘을 사용하였다.
-
-또한 학습과정에서의 과대적합(Overfitting)을 방지하기 위해, 학습 과정에서 과대적합이 일정한 에포크 이상으로 지속적으로 발생할 경우 학습률(learning rate)를 감소시키는 장치 및 항상 최적의 손실함수 감소를 보인 상태에 대해서만 신경망 모델을 저장하는 장치를 콜백 함수를 통해 삽입하였다.
-
-대부분의 딥러닝 프로젝트에서 Classification(분류) 문제를 다루는 것과 달리, 우리의 연구는 특정한 Target 값에 치밀하게 근접하도록 학습해야 하는 Regression(회귀) 문제상황이었기 때문에 모델의 학습과정에서 더 세심한 조정이 필요했다.
-
-특히 과대적합(Overfitting)이 매우 잘 발생하였는데, 이는 XPS 스펙트럼의 정보를 효과적으로 추출하기 위한 설계과정에서 증가하는 파라미터의 수와 모델의 학습과정이 충돌하였기 때문이다.
-
-이를 해결하기 위해 유사한 성능을 보이는 여러 모델들 중에서 가장 간단한 구조를 갖는 신경망 모델을 선정하였다. 그리고 Regularization, Batch Normalization, Dropout 등의 여러 수단을 통해 모델의 과대적합을 억제하고 올바른 방식으로 손실함수가 감소되게 하였다. 최종적으로 학습된 모델의 총 학습가능한 가중치 파라미터의 수는 약 17만 3천개였다.
-
-![Fig. 3.](https://user-images.githubusercontent.com/76824867/149634029-63777d95-560c-4bb4-a155-0958347a7c1a.png)
-
-
-### 4. 훈련된 모델의 시험 데이터 적용 결과
-
-다음 그림은 훈련을 마친 모델에 테스트 데이터셋을 적용한 결과들이다. 
-
-결과 중 위쪽 2개 및 왼쪽 아래 패널은 2개의 피크로 이루어진 테스트 데이터를 사용한 결과이며, 오른쪽 아래 패널은 피크 3개로 이루어진 테스트 데이터에서 나온 결과이다. 
-
-위 4개의 결과에서 확인할 수 있듯이, 무작위로 생성된 테스트 데이터셋에 대해서 상기한 훈련된 모델이 잘 작동하여 비교적 좋은 피팅 결과를 이끌어내는 것을 볼 수 있다. 물론, 이는 피크의 위치 및 대략적인 세기를 입력 후 회귀 분석을 통해 이끌어 낸 결과들에 비해서는 정확도가 떨어진다고 할 수 있으나, 인간의 개입 및 배경지식 없이 기계학습된 모델만을 사용한 결과로서는 인상적이라 할 수 있다. 
-
-특히, 그림의 오른쪽 위 패널의 경우, 두 개의 피크 중심이 상당히 가깝게 위치해 있는데다 하나의 피크의 세기가 약한 어려운 데이터임에도 불구하고 두 개의 피크의 위치 및 세기를 잘 잡아내는 것을 확인할 수 있다.
-
-![그림4](https://user-images.githubusercontent.com/76824867/149634051-8c21049a-df45-498d-bb7f-d5a0afe52070.png)
-
-참고로, 피크의 개수가 하나로 고정된 경우에는, CNN 없이 FCL 층만을 통해 신경망 모델을 구성하더라도 매우 정확한 결과를 얻을 수 있었다. 그런 경우에는 XPS 스펙트럼이 매우 단순한 구조이기 때문에 당연한 결과였다.
-
-하지만 피크의 개수가 2개 이상으로 주어지며 Overlapping Area가 발생되고, 또한 노이즈가 섞여 있는 결과들에 대해서는, 유사한 최적화 가능 가중치 변수 숫자를 갖춘 모델들을 비교했을 때 CNN + FCL 층의 조합이 FCL 만으로 구성된 모델에 비해 보다 나은 성능을 보여주는 것을 확인할 수 있었다. 이는 노이즈 처리 및 신호의 국소적 특성 추출에 유리한 CNN 층의 장점이 나타난 결과로 해석되었다.
-
-
-### 5. 훈련된 모델의 실제 광전자분광학 데이터 적용 결과
-
-최종적으로, 학습된 모델을 ITO 기판 위에서 증착된 P3HT 분자들 및 ITO 기판 자체에 대한 코어레벨 X선 PES (XPS) 스펙트럼 측정 결과에 적용해보았다.
-
-다음 그림의 (a), (b)는 각각 P3HT 분자들의 S 2p 및 ITO 기판 자체의 O 1s 코어레벨 XPS 측정결과를 나타내고, 각각의 그림에서 빨강색, 파랑색 및 초록색 커브들은 IGOR PRO 패키지를 이용하여 피팅된 피크들을 나타낸다.
-
-분석을 용이하게 하기 위해, 측정된 스펙트럼에서 배경신호를 제거하였고 스펙트럼의 최대값이 1이 되도록 데이터를 재규격화하였다.
-
-![그림5](https://user-images.githubusercontent.com/76824867/149634055-47279a3c-a03c-4c61-92a7-d11564a4a660.png)
+# Iterative Peak-Fitting of Frequency-Domain Data via Deep Convolution Neural Networks
 
 <br>
+<p align="center" style="color:gray">
+    <img src="https://i0.wp.com/xpslibrary.com/wp-content/uploads/XPS-with-polarized-x-rays.png?fit=1192%2C772&ssl=1">
+</p>
+<center><b></b></center>
+<br>
 
-밑의 그림은 P3HT에서 측정된 XPS 스펙트럼 및 IGOR PRO 패키지 피팅으로 얻은 각 피크 커브들을 위 과정을 통해 얻은 신경망 모델의 결과들과 비교한 것이다.
+<!-- TOC -->
 
-(a)는 배경신호를 제거한 실험결과(회색 선)를 신경망 모델에 의해 얻어진 피크들의 합(검은색)과 비교하고 있으며, 이 두 결과가 상대적으로 잘 일치함을 보여주고 있다.
+- [Iterative Peak-Fitting of Frequency-Domain Data via Deep Convolution Neural Networks](#iterative-peak-fitting-of-frequency-domain-data-via-deep-convolution-neural-networks)
+    - [Introduction](#introduction)
+    - [Methods](#methods)
+        - [Description of Neural Network Architectures](#description-of-neural-network-architectures)
+        - [Generation of Training, Validation, and Test Datasets](#generation-of-training-validation-and-test-datasets)
+        - [Training and Validation of Neural Networks](#training-and-validation-of-neural-networks)
+    - [Results](#results)
+        - [CNN Training and Validation](#cnn-training-and-validation)
+        - [Iterative Peak Subtraction via Trained CNN and Basin-Hopping Optimization](#iterative-peak-subtraction-via-trained-cnn-and-basin-hopping-optimization)
+    - [Conclusion](#conclusion)
+    - [References](#references)
 
-(b)는 실험결과로부터 IGOR PRO 패키지 피팅으로 얻어낸 황의 2$p_{1/2}$ (어두운 파란색 선) 및 2$p_{3/2}$ (어두운 빨간색) 피크들과 신경망 모델이 얻어낸 피크들을 (밝은 파랑색 및 빨강색) 비교하고 있다. 이를 통해 P3HT에서는 각 피크의 위치, 세기, 그리고 피크들의 폭을 신경망 모델이 비교적 잘 예측하고 있음을 알 수 있다.
+<!-- /TOC -->
 
-이는 P3HT에서는 S 2$p\_{1/2}$ 와 2$p\_{3/2}$ 상태 사이의 에너지 차이가 (~ 1.2 eV) 피크의 폭보다 충분히 큰 것으로 알려져 있기 때문에, 두 피크가 비교적 잘 구분되고 있기 때문으로 추정된다.
+이번 글에서는 연구인턴 시절에 진행했던 XPS 연구의 후속연구를 소개하고자 한다.
 
-![그림6](https://user-images.githubusercontent.com/76824867/149634059-fdf8a1fc-8640-4418-bce9-60d3903c162e.png)
+이전에 소개했던 1단계 연구는 여러 시행착오로 인해 기대한 만큼의 좋은 성과를 내지 못했고, 별로 높은 수준이 아닌 국내저널에 게재되었다. 반면, 후속연구 논문은 이전 연구에 비해 좋은 성과를 달성하여 낮은 IF의 JKPS 저널에 게재되었다. 이는 본래 진행하려고 했던 ARPES 연구 프로젝트의 2단계에 해당하는 연구였다.
 
-마지막으로 다음 그림은 ITO에서 측정된 XPS 스펙트럼과 IGOR PRO 패키지 피팅을 통해 얻은 각 피크 곡선들을 신경망의 예측 결과와 비교하여 보여주고 있다.
+기본적인 연구의 계획은 크게 변하지 않았으나 여러가지 CNN 모델을 직접 리팩토링하고, 다양한 하이퍼파라미터 튜닝을 하는 경험을 쌓을 수 있었다. 특히 마지막에 추가로 도입된 Basin-Hopping 알고리즘은 딥러닝 모델이 감지하지 못하는 Residual Fitting Error를 잘 감지하여 연구를 마무리하는데 큰 도움이 되었다.
 
-마지막으로 밑의 그림은 ITO에서 측정된 XPS 스펙트럼 및 IGOR PRO 패키지 피팅을 통해 얻은 각 피크 커브들을 신경망 모델 예측 결과들과 비교하여 보여주고 있다. 
+이전 글에서 설명한 것처럼, 이 연구는 XPS 실험 데이터에 대한 자동화된 분석과정을 딥러닝 모델을 통해 구현하려는 것이었다. 즉, 숙련된 인간 연구원의 개입이 최소화된 데이터 분석을 다루고자 했다.
 
-Figure 5(b)에서 보여진 것처럼, ITO 표면에 존재하는 산소 결핍 및 수소 결합의 존재는 서로 다른 3개의 산소 1$s$ 여기 상태 피크를 만들어낸다. 단, Fig. 7(a) 및 5(b)에서 확인할 수 있듯이, P3HT의 경우와는 달리 각 피크들의 폭에 비해 피크들 사이의 에너지 차이가 크지 않아 서로 다른 피크들이 충분히 잘 구분되지 않으며, 이 때문에 신경망 모델이 전체 스펙트럼으로부터 서로 다른 피크들을 분리해내는 것에 어려움이 있을 수 있음을 예상할 수 있다. 
+블로그에 처음 온 분들을 위해 간단히 설명하자면, 여러 종류의 CNN 모델을 훈련시키고 1차원 Noise가 섞인 Synthetic XPS 데이터를 여러개의 직교되지 않은(Non-Orthogonal) Peak들로 분해하는 연구였다. 주목할 만한 점이 있다면, 어느 시점에서 더이상 성능이 향상되기 어려운 딥러닝 모델의 사용방법을 바꿔 적용함으로써, 더 좋은 결과를 달성했다는 점이다. 
 
-Figure 7(b)는 IGOR PRO 패키지 피팅 결과 및 신경망 모델이 도출한 결과들을 비교하고 있으며, 위에서 예상한 바와 같이 신경망 모델이 각 피크의 위치 및 세기를 잘 도출해내고 있지 못함을 확인할 수 있다. 
-
-특히, 530.29 eV에 위치한 첫번째 피크를 (어두운 빨강색), 신경망 모델은 서로 다른 2개의 근접한 피크들의 (밝은 보라색 및 빨강색) 합으로 잘못 해석하고 있으며, 대신 532.8 eV에 위치한 세번째 피크의 존재를 (어두운 초록색) 신경망 모델이 놓치고 있는 것을 확인할 수 있다.
-
-![그림7](https://user-images.githubusercontent.com/76824867/149634060-9e621dfa-b345-41bc-9e1a-13bb467cf5e6.png)![표1](https://user-images.githubusercontent.com/76824867/149634339-b4fbda9c-ae10-413d-9f74-e6f8cd813673.PNG)
-
-Table 1은 신경망 모델에서 얻어낸 파라미터들을 연구자가 패키지 피팅을 통해 얻은 결과들과 비교하고 있으며, 현재 사용한 초보적인 수준의 신경망 모델에 개선의 여지가 아직 많이 남아있음을 보여주고 있다.
-
-## 글을 마치며
-
-이 연구 프로젝트를 통해 딥러닝 모델을 물리학 문제 및 실험결과의 분석에 적용하는 것의 가능성에 대해 확인할 수 있었지만, 실제 연구를 위한 도구로 활용되기 위해서는 보다 심도있는 모델링과 파라미터 튜닝, 그리고 더 많은 양의 훈련 데이터가 필요했다.
-
-특히 XPS 분야에서 비선형 회귀분석 방법론을 통해 1차원 분광학 데이터를 피크 피팅하는 것은 이미 잘 발전되어 있기 때문에, 이에 대해 정량적인 정확도의 우위를 점하기 위해서는 더 많은 노력이 필요했다.
-
-이 연구 프로젝트와 상당히 유사하지만, 더 복잡한 피크 피팅과 물질 내 원소의 구성비 예측을 목표로 한 선행연구가 있었는데, 그 연구에서는 기계학습 모델을 통해 예측된 물질의 조성비가 실제 측정결과와 비교하여 10% 수준의 큰 오차를 보이는 것을 확인할 수 있었다.
-
-아마도 이런 오차의 주된 원인으로는 모델 훈련을 위해 가상의 분광학 데이터를 생성해야 하는 어려움이 가장 클 것이다. 하지만 기계학습 문제의 관점에서 보자면, 어느 정도의 오차가 허용되는 분류 문제가 아닌 정량적 수치를 밀접하게 예측해야 하는 Regression 문제에 접근하는 것의 어려움을 엿볼 수 있었다.
-
-다만, 2018년에 발표되어 주목을 받은 CGCNN 연구의 사례처럼, 학습 데이터를 기계학습에 적합한 형태로 변환할 수 있을 때 물질의 전체 에너지와 같은 정량적인 값 또한 상당히 높은 정밀도로 예측가능한 사례가 있었다. 결국 신경망 모델의 학습 뿐만 아니라, 적절한 데이터의 표현형을 찾는 것도 중요한 문제임을 알 수 있었다.
-
-그리고, 이번 연구와 같이 1차원 스펙트럼 데이터에 대한 기계학습 방법론 접근은, 사람에게도 비교적 쉬운 문제에 해당되기 때문에 딥러닝 모델을 활용하는 것이 대단한 이득이 없을 수도 있었다. 그러나 당시 교수님의 큰 그림은.. 분광학 데이터 도메인의 차원이 2차원 이상으로 확장되는 (진동수 + 운동량) 차원에서 각분해 광전자 분광학 (Angle-Resolved PES, ARPES) 데이터를 분석하는데 딥러닝 모델이 유용한가를 판별하는 것이 진정한 목적이었기 때문에, 이 연구는 사실 진짜 연구의 예비단계에 해당하는 연구였다.
-
-참고로, 이후 이 연구의 후속연구로서 모델의 정확도 및 성능을 개선한 연구가 나름대로 성공하여 JKPS에 게재되었다. 그 연구는 나중에 소개하도록 하겠다. 참고로 이 연구가 본래 계획의 1단계였고, 후속연구가 2단계였는데... 진정한 연구였던 3단계는 나와 다른 연구원이 모두 재미없다고 포기해서 시작조차 되지 않았다. ㅋㅋㅋㅋ
-
-## Reference
+이후 고전적인 Basin-Hopping 알고리즘을 적용하여 불완전하게 남아있는 Fitting Error를 감소시켰다. 6개의 서로 다른 CNN 모델 구조 중에서 우리가 제안했던 Squeeze-and-Excitation 네트워크의 변형모델은 최고의 성능을 보여주었다. 또한 손실함수의 선택에 따른 훈련 성능의 의존성도 논의하였다. 최종적으로 변형된 SENet 모델을 Graphene, $MoS_{2}$, $WS_{2}$와 같은 물질의 실험적인 광전자 스펙트럼 데이터에 적용하였다.
 
 
----
 
-# 후속연구에 대한 소개글
+## Introduction
 
-**[계속 수정중인 글입니다.]**
+보통 재료과학 분야에서 물성예측 모델을 훈련시키기 위해 축적된 계산데이터를 활용하는 것과는 대조적으로, XPS와 같은 실험적인 분광학 분야에서 머신러닝을 적용하는 것은 상대적으로 덜 연구되어왔다. 
 
-# Iterative peak-fitting of frequency-domain data via deep convolution neural networks
+XPS 및 머신러닝의 응용연구 분야에서는, 초기에 실험적인 PTM과 STM 스펙트럼으로부터 유용한 물리적 정보를 추출하려는 몇가지 응용연구가 있었다.
 
-이번 포스팅에서는 예전 학부생 시절에 진행했던 XPS 연구의 후속연구를 소개하고자 한다.
+구체적으로는, Core-level XPS 스펙트럼에 대한 딥러닝 응용연구가 있었는데, 딥러닝 모델을 이용하여 주어진 테스트 물질의 화학적 구성요소들의 화학양론을 예측하는 것이 주제였다. 그러나 실제 물질의 구성비와 10% 정도의 오차를 보였고, 이후 관련된 분야의 연구들은 별로 발표되지 않았다.
 
-이전단계의 연구는 여러가지 시행착오로 인해 기대한 만큼의 좋은 성과를 내지 못했고, 그 결과 별로 높은 수준이 아닌 국내저널에 게재되었다. 반면, 후속연구 논문은 이전 연구에 비해 좋은 성과를 달성하여 낮은 IF의 JKPS라는 저널에 게재되었으며, 이는 본래 진행하고자 했던 연구인 ARPES 연구의 2단계 연구에 해당한다.
+당시에 연구를 진행하는 과정에서, 실험적인 스펙트럼 데이터를 분석하는 것은 몇가지 어려운 점이 있었다.
 
-기본적인 연구의 골자는 달라지지 않았으나, 여러가지 CNN 모델을 직접 다뤄보고, 무수한 하이퍼파라미터 튜닝과 함께 다양한 딥러닝 모델을 다루는 경험을 쌓을 수 있었다. 특히 마지막에 추가로 도입된 Basin-hopping 알고리즘은 딥러닝 모델이 감지하지 못하는 residual fitting error를 잘 잡아내어 연구를 마무리하는데 도움이 되었다.
+첫번째는 스펙트럼을 Non-Orthogonal한 Peak 요소로 분해하는 과정에서 존재하는 내재된 비고유성이다. 즉, 간단히 말하자면 2개 이상의 Peak가 존재하여 Overlapping Area가 발생하는 스펙트럼은, 그러한 영역의 해석에서 단일 솔루션이 존재하기 어려웠다.
 
-이전 연구 포스팅에서 설명했던 것처럼, 이 연구는 XPS 실험 데이터에 대한 자동화된 분석과정을 딥러닝 모델을 통해 구현하려는 것이었다. 즉, 인간의 개입이 최소화된 데이터 분석을 논의하려고 했다.
+두번째로 실험적 스펙트럼 데이터가 매우 제한적이라는 것이었다. 즉, 실제적인 표면 물리현상을 모방하기 위해 XPS 스펙트럼과 유사한 데이터를 합성하여 훈련데이터로 사용했지만, 당연히 가장 좋은 데이터 자원은 실제 연구실에서 축적된 XPS 데이터였을 것이다. 그러나 그러한 Real XPS 데이터는 10년 가까이 XPS 연구를 한 연구실에서도 수백개정도밖에 없었다.
 
-간단히 설명하자면, 여러 종류의 CNN 모델을 훈련시키고, 1차원 노이즈가 섞인 Synthetic XPS 데이터를 여러 개의 직교되지 않은(Non-orthogonal) 피크(peaks)들로 반복적인 방식으로 분해하는 방법으로 여러 모델들의 성능을 테스트하였다.
+세번째로 전통적인 Spectroscopy 연구분야에서 오랜 경험과 직관을 가진 인간 연구원이 딥러닝 모델에 비해 성능면에서 우월하다는 사실이었다. 즉, 실제로 XPS 실험을 하는 연구원들은 단순히 스펙트럼의 모양만을 갖고 해석하는 것이 아니라 데이터 외적인 여러 표면물리학적 지식과 관련분야에서 이루어진 레퍼런스 연구들의 지식을 종합하여 실험결과를 해석하였다. 예를 들면, XPS 데이터에서 특정한 부분에 Peak가 존재하지 않는 것처럼 보이더라도 숙련된 연구원이라면 특정한 Energy level에서 반드시 특정 원자(예를 들면 Carbon)의 Peak가 존재한다는 사실을 알고 있었다.
 
-그 후에 고전적인 basin-hopping 알고리즘이 불완전하게 남아있는 fitting error를 감소시키기 위한 방법으로 적용되었다. 6개의 서로 다른 CNN 모델 구조 중에서, 우리가 처음으로 제안했던 Squeeze-and-Excitation 네트워크의 변형모델은 최고의 성능을 보여주었다. 또한, 손실함수의 선택에 따른 훈련 퍼포먼스의 의존성도 논의한다. 
+추가적으로 XPS 분야에는 이미 많은 분광학적 도구들이 존재했다. 보통 XPS 데이터는 에너지나 진동수 도메인에서 측정되는데 이와 관련된 Raman, Photoemission, 광흡수, 광발광, 핵자기공명, 비탄성 X선, 중성자 산란 등 실험적 스펙트럼 데이터의 분석을 자동화하기 위한 고전적인 계산도구들이 이미 상당히 발전되어 있었다. 우리의 연구는 이 목록에 딥러닝 기반의 방법론을 추가하려는 것이었다.
 
-최종적으로 변형된 SENet 모델을 graphene, $MoS_{2}$, $WS_{2}$와 같은 물질의 실험적인 광전자 스펙트럼 데이터에 적용하였다.
+다음 그림은 연구에서 딥러닝 모델의 응용방식이었던 Iterative Peak Fitting 과정을 보여준다. 이전 단계의 연구에서 우리가 훈련시킨 딥러닝 모델은 여러가지 XPS 관련 정보들을 동등한 수준으로 출력하지는 못했었다. 
 
+즉, 모델이 상당히 정확하게 예측하는 정보와 그렇지 못한 정보가 있었다. 그 중에서 최대높이(최대면적)을 갖는 한 종류의 Peak는 유달리 잘 예측하는 것을 발견했었기 때문에, 모델의 한정된 예측성능만을 반복적인 방식으로 적용함으로써 모델의 성능을 끌어올리려는 시도가 주요한 아이디어였다.
 
-## 1 Introduction
-
-재료과학 분야에서 물성에 대한 예측모델을 훈련시키기 위해 축적된 계산 데이터로부터 분석과 학습을 하는 것과는 대조적으로, XPS와 같은 실험적인 분광학 분야에서 머신러닝을 적용하는 것은 상대적으로 덜 연구되어 왔다. 
-
-XPS와 머신러닝의 응용연구 분야에서는, 초기에 실험적인 PTM과 STM 스펙트럼으로부터 유용한 물리적 정보를 추출하는 몇가지 응용연구가 있었다. 구체적으로는, Core-level XPS 스펙트럼에 대한 딥러닝 모델의 응용에 관한 연구가 있었는데, 주어진 테스트 물질의 화학적 요소들의 화학양론을 수량화하는 주제에 있어서 실험적 결과와의 질적 일치를 보여주었다. 다만, 그 실험의 경우 실제 구성비율과 10% 정도의 오차를 가졌고, 응집물질과 재료과학 연구의 중요성과 비교했을 때 후속연구들은 의외로 별로 없었다.
-
-이 당시에 연구를 진행했을 때, 우리가 생각했던 
-
-실험적인 스펙트럼 데이터를 분석하는 데 있어서 몇 가지 어려운 점들이 있었다. 첫번째로, 스펙트럼을 Non-orthogonal한 요소들(예를 들면 peak)로 분해하는 과정에서의 내재된 비고유성, 두번째로 제한된 양의 실험적 스펙트럼 데이터 (일반적인 딥러닝 프로젝트의 기준에서 매우 불충분한 양), 그리고 세번째로, 전통적인 Spectroscopy 연구분야에서 기계학습된 모델보다 물리적 직관을 가진 인간연구자의 직관의 우월성이었다.
-
-또한, XPS 분야에는 이미 많은 분광학적 도구들이 존재했다. 보통 XPS 데이터는 에너지나 진동수 도메인에서 측정되었는데, 이와 관련된 Raman, photoemission, 광흡수, 광발광, 핵자기공명, 그리고 비탄성 x선, 또는 중성자 산란, 실험적 스펙트럼 데이터들의 분석을 자동화하기 위한 계산도구들은 이미 어느정도 발전되어 있었다. 우리의 연구는 여기에 딥러닝 기반 방법론을 추가하려는 것이었다.
-
-결국 우리의 실험에서, CNN 모델과 고전적인 Basin-hopping 최적화 기술을 결합하여, 주어진 1차원 파라미터 $F(\omega)$도메인에서의 스펙트럼을 여러 피크함수들로 분해하는 것에 도전하였다.
-
-다음 그림은 우리의 딥러닝 모델이 사용하려고 했던 Iterative Peak Fitting 과정을 보여준다. 이전 단계의 연구에서 우리가 훈련시킨 딥러닝 모델은 여러가지 XPS 관련정보들을 동등한 수준으로 출력하지는 못했었다. 즉, 모델이 상당히 정확하게 예측하는 정보와 그렇지 못한 정보가 있었다. 그 중에서 최대높이(최대면적)을 갖는 한 종류의 피크는 유달리 잘 예측하는 것을 발견했었기 때문에, 모델의 그러한 부분만을 반복적인 방식으로 적용함으로써 고정된 모델의 성능을 끌어올리려는 것이 주요한 아이디어였다.
-
-![그림1](https://user-images.githubusercontent.com/76824867/149705030-692e6c1a-f64d-467f-a4ea-11fe5c6b248a.png)
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/149705030-692e6c1a-f64d-467f-a4ea-11fe5c6b248a.png">
+</p>
+<center><b>Figure 1. A cartoon illustration of decomposing a noisy spectrum (black curve) with multiple peak features by sequentially applying regression and subtraction of the largest-area peak (red and blue curves) until no peak feature is left</b></center>
+<br>
 
 
-## 2 Methods
 
-### 2.1 Description of neural network architectures
+## Methods
 
-결국 우리는 XPS 스펙트럼으로부터 최대한 내재된 넓이를 갖는 하나의 Peak를 정확하게 추출하기 위해, 잘 설계된 CNN 구조가 필요했다. 이를 위해 6종류의 CNN 구조에 대한 변형 및 Peak 추출 성능을 Benchmark 하였다.
+### Description of Neural Network Architectures
 
-우리가 벤치마크한 CNN 구조들은 다음과 같았다. 모델들의 정렬 순서는 네트워크 구조에서 복잡성이 증가하는 순서이다.
+XPS 스펙트럼으로부터 최대한 내재된 넓이를 갖는 하나의 Peak를 정확하기 추출하기 위해, 잘 설계된 CNN 구조가 필요했다. 이를 위해 여섯종류의 CNN 구조를 도입하여 연구상황에 맞게 변형하고 Peak 추출 성능을 Benchmark 하였다.
 
-1. LeNet
-2. Alex-ZFNet
-3. VGGNet
-4. ResNet
-5. SENet
-6. m-SENet
+도입된 CNN 구조는 다음과 같았다. 모델들의 정렬 순서는 네트워크 구조에서 복잡성이 증가하는 순서이다.
 
-딥러닝을 공부해본 사람들은 알겠지만, LeNet은 최초로 제안된 CNN 구조이다. 이미지에 대한 합성곱 연산과 서브샘플링(Pooling) 레이어를 반복하는 것으로 구성된다.
+* **LeNet**
+  딥러닝을 공부한 사람들은 알겠지만, LeNet은 최초로 제안된 CNN 구조이다. 이미지에 대한 Convolution 연산과 Pooling 연산을 반복하는 것으로 구성된다.
+* **Alex-ZFNet**
+  Alex-ZFNet은 LeNet의 향상된 버전으로 간주될 수 있다. MaxPooling, Dropout, ReLU 함수를 도입하였다.
+* **VGGNet**
+  VGGNet은 균등한 네트워크 구조이면서도 컨볼루션 필터의 증대된 숫자를 선택하여 다른 길을 취했다.
+* **ResNet**
+  ResNet은 소위 말하는 Skip connections를 취한 것이다, 이는 네트워크 레이어 속 깊이까지 손실함수의 back propagation을 강화하기 위해서 고안되었다.
+* **SENet**
+  SENet에서는 소위 말하는 'Squeeze-and-Excitation (SE) block'이 도입되어, 적은 양의 계산코스트 증가로 성능을 향상시키고자 하였다.
+* **m-SENet**
 
-Alex-ZFNet은 LeNet의 향상된 버전으로 간주될 수 있다. MaxPooling, Dropout, ReLU 함수를 도입하였다.
+연구에서 최종적으로 m-SENet을 특성추출을 위한 Best Performance 모델로 선택하였다.
 
-VGGNet은 균등한 네트워크 구조이면서도 컨볼루션 필터의 증대된 숫자를 선택하여 다른 길을 취했다.
+다음 그림의 (a), (b)에서 보이는 것처럼 각각의 Sparse-Dense Block은 연속적으로 연결된 합성곱 층과 하나의 SE 블록의 여러 쌍으로 구성된다. 여기서 Identity 맵핑은 하나의 Sparse-Dense 블록 안에서 CONV-CONV-SE의 Triplet 2개 출력층과 입력을 맵핑한다. 또한, 분포를 조정하는 Batch Normalization과 SE 층들은 인접한 Sparse-Dense Block 사이에 놓였는데, 이는 합성곱의 결과로 나오는 특성맵의 가중치를 재조정하기 위해서이다. 이 구조는 극도로 깊은 모델 안에서도 효율적인 학습을 허용하는 것으로 알려져 있다.
 
-ResNet은 소위 말하는 Skip connections를 취한 것이다, 이는 네트워크 레이어 속 깊이까지 손실함수의 back propagation을 강화하기 위해서 고안되었다.
+마지막으로 회귀(Regression) 층은 Global Average Pooling을 통해 연결되었다. 모델의 총 학습가능한 파라미터의 수는 4183,830개였고, Overlapped Average Pooling은 모든 서브샘플링 과정 안에서 사용되었다.
 
-SENet에서는 소위 말하는 'Squeeze-and-Excitation (SE) block'이 도입되어, 적은 양의 계산코스트 증가로 성능을 향상시키고자 하였다.
-
-
-프로젝트에서 우리는 최종적으로 m-SENet을 best-performance 모델로 선택하였는데, SENet에서의 SE 블록의 개념은 소위 말하는 sparse-dense block 안에서 실행되었다.
-
-그림 2a, 2b에서 보이는 것처럼, 각각의 sparse-dense block은 연속적으로 연결된 합성곱 층과 하나의 SE 블록의 여러 쌍으로 구성되어 있다. 거기서 Identity 맵핑은 하나의 sparse-dense 블록 안에서 CONV-CONV-SE의 Triplet 2개의 출력층과 입력을 맵핑한다.
-
-또한, 분포를 조정하는 Batch Normalization과 SE 층들은 인접한 sparse-dense block들 사이에 놓였는데, 이는 합성곱의 결과로 나오는 특성 맵의 가중치를 재조정하기 위해서이다. 이 구조는 극도로 깊은 모델 안에서도 효율적인 학습을 허용하는 것으로 알려져 있다.
-
-마지막으로 회귀(Regression) 층은 global average pooling을 통해 연결되었다.
-
-모델의 총 학습가능한 파라미터의 수는 4183,830개였고, overlapped average pooling은 모든 서브샘플링 과정 안에서 사용되었다.
-
-![그림2](https://user-images.githubusercontent.com/76824867/149705041-ceec83bb-d0b6-459a-bc7b-53ad1bef9d5d.png)
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/149705041-ceec83bb-d0b6-459a-bc7b-53ad1bef9d5d.png">
+</p>
+<center><b>Figure 2. a A schematic representation of m-SENet architecture, where detailed layering structure inside a sparse-dense block is depicted in (b)</b></center>
+<br>
 
 
-### 2.2 Generation of training, validation, and test datasets
+
+### Generation of Training, Validation, and Test Datasets
 
 이제 데이터셋에 대해 이야기해보자.
 
-보통 머신러닝, 딥러닝을 처음 공부하게 되면, 이미 준비되어 있는 다양한 예제 데이터들이 사용자를 반겨준다. 하지만 실제로 물리학과 같은 분야에 머신러닝을 적용하려고 하면, 준비되어 있는 데이터는 거의 존재하지 않는다. 데이터는 대부분 파편화되어 인터넷 공간상에 여기저기 흩어져 있고, 데이터를 모으더라도 각기 다른 연구조건에서 이루어진 실험들은 동일한 데이터로 취급되기 어렵다.
+보통 머신러닝/딥러닝을 처음 공부하게 되면, 이미 준비되어 있는 다양한 예제 데이터들이 학습자를 반겨준다. 하지만 실제로 물리학과 같은 분야에 머신러닝을 적용하려고 하면, 준비되어 있는 데이터는 거의 존재하지 않는다. 데이터는 대부분 파편화되어 인터넷 공간상에 여기저기 흩어져 있고, 데이터를 모으더라도 각기 다른 연구조건에서 이루어진 실험들은 동일한 데이터로 취급되기 어렵다.
 
-그렇기 때문에, 내가 알기로 물리학 분야에서 데이터가 축적되어온 극히 일부 분야(계산물리학, 입자물리학 등)를 제외하고, XPS와 같은 실험물리학 분야에서는 실질적으로 사용할 수 있는 데이터가 거의 존재하지 않았다.
+그렇기 때문에, 내가 알기로 물리학 분야에서 데이터가 축적되어 온 극히 일부 분야(계산물리학, 입자물리학 등)를 제외하고, XPS와 같은 실험물리학 분야에서는 실질적으로 사용할 수 있는 데이터가 거의 존재하지 않았다.
 
-그럼 데이터가 존재하지 않는데, 어떻게 머신러닝 응용 연구를 할 수 있을까? 보통 이 상황에서 연구원들이 선택하는 것은 현실의 XPS 스펙트럼을 모방할 수 있는 Synthetic training data를 만드는 것이다.
+그럼 데이터가 존재하지 않는데, 어떻게 머신러닝 응용 연구를 할 수 있을까? 보통 이 상황에서 연구자들이 선택하는 것은 현실의 XPS 스펙트럼을 모방할 수 있는 Synthetic Training Data를 만드는 것이다.
 
-(우리의 연구에서는 비교적 간단한 방법으로 XPS 스펙트럼 데이터를 재현하려고 했다. 하지만, XPS 스펙트럼의 모양이 다른 물리 데이터들에 비해 간단해보일지라도, XPS의 실험적 특성을 온전히 간직한 데이터를 생성하는 것은 매우 어려운 일이다. 왜냐하면, 본질적으로 물질의 표면에 대한 상호작용 정보가 데이터에 포함되어 있을 것이기 때문이다. 종종 매우 높은 수준의 물리학 저널에 올라오는 머신러닝 응용논문을 보면, 해당분야의 권위자들이 모인 연구그룹에서 높은 수준의 이론물리를 적용하여 극도로 정교하게 고안된 Synthetic 데이터를 갖고 연구를 한 내용이 종종 발견된다. 그만큼 제대로 현실의 물리학을 반영한 데이터를 만드는 것은 어려운 일이다.)
+우리의 연구에서는 비교적 간단한 방법으로 XPS 스펙트럼 데이터를 재현하려고 했다. 하지만 XPS 스펙트럼의 모양이 다른 물리 데이터들에 비해 간단해 보일지라도, XPS의 실험적 특성을 온전히 간직한 데이터를 생성하는 것은 매우 어려운 일이다. 왜냐하면 본질적으로 물질의 표면에 대한 상호작용 정보가 데이터에 포함되어 있을 것이기 때문이다. 종종 매우 높은 수준의 물리학 저널에 올라오는 머신러닝 응용논문을 보면, 해당분야의 권위자들이 모인 연구그룹에서 높은 수준의 이론물리를 적용하여 극도로 정교하게 고안된 Synthetic 데이터를 갖고 연구를 한 내용이 발견된다. 그만큼 제대로 현실의 물리현상을 반영한 데이터를 만드는 것은 어려운 일이다.
 
-어쨌든, 우리의 실험에서는 실제 실험결과로 얻은 XPS 스펙트럼 데이터는 최종 테스트에 간신히 쓰일 수 있을만큼 매우 부족했다.
+실제 연구에서는 Real XPS 스펙트럼 데이터가 모델의 최종검증에만 사용되어야 할 만큼 매우 부족했다. 그러므로 Pseudo Voigt Function을 적용하여 모델 훈련을 위한 합성 데이터셋을 생성하였다. 여기서 Voigt 함수라는 것은 실험적으로 측정되는 X-ray Diffraction 또는 광전자 데이터로부터 Peak Fitting을 하는데 종종 사용되는 모델함수라고 한다.
 
-그러므로 Pseudo Voigt 함수를 적용하여 모델 훈련을 위한 합성 데이터셋을 생성하였다. 여기서 Voigt 함수라는 것은 실험적으로 측정되는 X-ray diffraction 또는 광전자 데이터로부터 Peak fitting을 하는데 종종 사용되는 모델함수라고 한다.
-
-함수의 다음 형태는 인공 데이터셋 안의 각각의 피크를 생성하기 위해 선택되었다.
+함수의 다음 형태는 인공 데이터셋 안의 각각의 Peak를 생성하기 위해 선택되었다.
 
 $$ f(\omega; \omega_0, I_0, \delta) = I_0 ( I_G e^{- \frac {log(2) (\omega - \omega_0)^2}{\delta^2 \omega_G^2}} + I_L \frac {1}{1 + \frac {(\omega - \omega_0)^2}{\delta^2 \omega_L^2}} ), \tag 1  $$
 
-여기서 $\omega$는 스펙트럼 데이터의 진동수(에너지)로 간주될 수 있고, $\omega_0$, $I_0$, $\delta$ 는 각각 임의로 생성된 피크의 위치, 최대높이, 그리고 (차원없는) 너비이다. $\omega_G$, $\omega_L$, $I_G$, 그리고 $I_L$은 각각 0.510, 0.441, 0.7 그리고 0.3으로 설정되었다. 위의 유사 Voigt 함수 안에서의 이러한 파라미터 선택은 이전의 광전자연구에서의 실험적 스펙트럼을 피팅하기 위해 채택되었다.
+여기서 $\omega$는 스펙트럼 데이터의 진동수(에너지)로 간주될 수 있고, $\omega_0$, $I_0$, $\delta$ 는 각각 임의로 생성된 피크의 위치, 최대높이, 그리고 (차원없는) 너비이다. $\omega_G$, $\omega_L$, $I_G$, 그리고 $I_L$은 각각 $0.510$, $0.441$, $0.7$ 그리고 $0.3$으로 설정되었다. 위의 Pseudo Voigt Function 안에서의 이러한 파라미터 값은 이전의 PES 연구에서 얻어진 실험적 스펙트럼을 Fitting하기 위해 설정되었다.
 
-결국, 각각의 1차원 합성 데이터에서 최대 5개까지의 임의의 유사 Voigt 함수들이 더해졌다. 그리고 표준편차가 최대세기의 2%가 되는 Gaussian noise를 추가하였다. 또한, 이웃 피크들의 중심위치들이 최대 $\delta$의 20%보다 가깝게 되지 않도록 강제하였다.
+최종적으로 각각의 1차원 합성데이터에서 최대 5개까지의 임의의 유사 Voigt 함수들이 더해졌다. 그리고 표준편차가 최대세기의 2%가 되는 Gaussian noise를 추가하였다. 또한, 이웃 Peak들의 중심위치들이 최대 $\delta$의 20%보다 가깝게 되지 않도록 제한하였다.
 
-XPS 실험에서 흔히 보이는 Background signal은 이 연구에서는 고려되지 않았지만, 단색적으로 백그라운드 신호를 증가시키거나 감소시키는 것을 필터링하는 것은 단순한 CNN 모델을 통해 이미 가능하다는 것이 선행연구로 보고되어 있었다.
-
-
-### 2.3 Implementation, train, and validation of neural networks
-
-모델과 데이터가 모두 준비된 상태에서 실질적인 훈련에 들어갔다.
-
-연구실에 돈이 없어서, GPU가 별로 없었기 때문에 (...) 모델훈련은 Nvidia RTX 2080Ti GPU를 사용하여 이루어졌다.
-
-4개의 서로 다른 목표변수가 있었는데, 중심위치 $\omega_0$, 너비 $\delta$, 그리고 최대 넓이를 가진 피크의 세기 $I_0$, 그리고 스펙트럼 안의 피크의 수가 그것이었다.
-
-손실함수는, 중심위치/너비/세기/피크 수에 대한 개별 손실함수들의 총합으로 이루어졌다.
-
-전체 손실함수 안에서의 서로 다른 손실 성분들의 기여도를 정규화하기 위해 1, 10, 20, 그리고 2의 가중치들이 $\omega_0$, $\delta$, $I_0$, 그리고 피크의 수를 최적화하는 손실함수의 각 부분에 각각 할당되었다
-
-ADAM 옵티마이저가 사용되었고, SGD 또한 대조군으로 테스트되었으나 성능은 거의 유사했다.
-
-활성화 함수는 모두 LeakyReLU가 사용되었고, 512의 Batch size와 50 EPOCH로 이루어졌으며 학습률은 20번째와 40번째 에포크 이후, 오버피팅을 피하기 위해, 10%까지 감소되었다. 또한 드롭아웃 레이어는 사용되지 않았다.
+XPS 실험에서 흔히 보이는 Background Signal은 이 연구에서 고려되지 않았지만, 배경신호의 필터링은 단순한 CNN 모델을 통해 가능하다는 것이 이미 선행연구로 보고되어 있었기에 문제가 되지 않았다.
 
 
-![그림3](https://user-images.githubusercontent.com/76824867/149705044-7d8b40f8-5680-4c45-a78f-e6e66ed582fe.png)
 
-최종적으로 CNN 벤치마크 연구를 위해, $1.5x10^6$의 합성 스펙트럼을 생성하였고, 그 중에서 $1.2x10^6$, $1.5x10^5$, $1.5x10^5$ 데이터는 훈련, 검증, 그리고 모델 성능 테스트를 위해 각각 사용되었다.
+### Training and Validation of Neural Networks
 
-나중에는 데이터셋의 크기를 성능향상의 확인을 위해 $10^7$로 증가시켰다.
+모델과 데이터가 모두 준비된 상태에서 실질적인 훈련에 들어갔다. 연구실에 예산이 부족해서 GPU가 별로 없었기 때문에(..) 모델훈련은 Nvidia RTX 2080Ti GPU를 사용하여 이루어졌다.
 
+중심위치 $\omega_0$, 너비 $\delta$, 최대넓이를 가진 Peak의 세기 $I_0$, 그리고 스펙트럼 안의 Peak의 수를 표적변수로 정해져 있었고, 전체 손실함수는 이러한 개별 물성에 대한 손실함수의 총합으로 정의되었다.
 
-## 3 Results
+전체 손실함수 안에서 서로 다른 손실함수 성분들의 기여도를 정규화하기 위해 1, 10, 20, 그리고 2의 가중치들이 $\omega_0$, $\delta$, $I_0$, 그리고 Peak 수를 최적화하는 손실함수의 각 부분에 할당되었고, Adam Optimizer가 사용되었다. SGD 또한 대조군으로 테스트되었으나 성능은 거의 유사했다.
 
-### 3.1 CNN training and validation
+활성화 함수는 모두 LeakyReLU가 사용되었고, 512의 Batch Size와 50 Epoch로 학습이 이루어졌으며, 학습률은 20번째와 40번째 Epoch 이후 Overfitting을 피하기 위해 10%까지 감소되었다. 또한 Dropout 레이어는 사용되지 않았다. (이 부분에 대해서는 제 1저자가 왜 Dropout 레이어를 사용하지 않았는지 약간 의문이다. 아래 결과에서 보겠지만, Overfitting을 억제하는 것이 연구에서 중요한 문제로 보이고, Dropout은 과대적합을 억제하는 매우 효과적인 수단이기 때문이다. 그러나 나는 2저자였기 때문에 무슨 의도가 있는가 싶어서 크게 이의를 제기하지 않았다.
 
-다음 그림은 서로 다른 CNN 구조들로부터의 훈련 및 검증과정에서의 MSE 손실함수의 요약을 보여준다.
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/149705044-7d8b40f8-5680-4c45-a78f-e6e66ed582fe.png">
+</p>
+<center><b>Figure 3. Two examples of synthetically generated data with multiple (up to 5) pseudo-Voigt profiles. Colored and black lines depict each pseudo-Voigt peaks and addition of all peaks with gaussian noise, respectively</b></center>
+<br>
 
-4개의 목표 특성들 (각 스펙트럼 안의 피크 수, 중심위치, 너비, 최대면적 피크의 세기) 사이에서 피크 중심위치의 손실함수가 (특별히 중요하므로) 같이 그려졌다. 
-
-실제 연구에서, 피크의 위치는 특별히 가장 큰 오차를 만드는 경향이 있었다. (이것은 실제 XPS 분석에서 특정한 피크의 에너지 레벨을 추정하는 일이 가장 중요하다는 사실과 대응된다.) 
-
-훈련 및 검증 손실함수를 보면, 확실히 초창기 CNN 모델이었던 LeNet에서 m-SENet으로 감에 따라 점진적인 감소가 일어나는 것이 명확하게 보였다. 이는 CNN 모델의 발전이, XPS와 같은 Task-specific한 분야에서도 (약간의 수정이 있으면) 충분히 안정적인 성능을 보일 수 있음을 증명한다.
-
-특히 우리의 m-SENet은 피크를 감지하는 것과 피팅하는 것에 있어서, 다른 모델보다 더 나은 표현력(representation power)을 보여주었다.
-
-![그림4](https://user-images.githubusercontent.com/76824867/149705045-308737c9-e7ba-4968-8c35-972f6dc8df11.png)
-
-위 그림에서 보이는 훈련 및 검증 결과들은 MSE를 손실함수로 하여 얻어진 것이다. 일반적으로 MSE는 Regression 문제에서 모델을 직접적으로 학습하기 위한 손실함수로 채택된다. 그러나 몇몇 경우에 MSE는 매우 작은 이상치(Outlier)들의 효과를 과대평가하는 경향이 있었다. 그리고 이는 모델의 안 좋은 예측성능으로 이어질 수 있었기에 때때로 MAE가 더 나은 선택일 수 있었다.
-
-흥미롭게도 우리의 CNN Peak Fitting 문제는 그러한 유형의 것으로 발견되었다.
-
-모델 훈련과 검증에서의 MSE, MAE 손실함수의 효과를 비교하기 위해, 동등한 환경에서 각각의 CNN 모델을 분리하여 MSE와 MAE를 사용하여 훈련시켰다. 이후 각각의 훈련된 모델을 테스트 데이터셋의 Fitting에 적용하고, MAE 손실함수를 계산하였다.
-
-밑의 그림은 그 결과를 보여준다. 
-
-그림에서 4개의 목표변수들 모두의 테스트 손실함수는 모든 CNN 구조에서 MAE가 훈련에 사용되었을 때 더 낮은 값을 보여주었다. 그 결과로부터, MAE 훈련손실함수를 가진 SENet과 m-SENet이 이번 연구에서 거의 동등한 성능을 보인다는 것을 알 수 있었다.
-
-m-SENet이 최고의 성능을 보여준다는 것을 확인한 후에, 모델의 성능을 강화하기 위해 전체 데이터셋의 크기를 1.5에서 10 million으로 증가시켰다. 왜냐하면 정확한 Peak Fitting은 스펙트럼에서 Peak들에 대한 연속적인 추출에서 중요하기 때문이다.
-
-표 1은 1.5와 10 million 데이터셋으로 훈련된 m-SENet으로부터의 손실함수 결과를 비교해서 보여준다. 큰 훈련 데이터셋을 적용했을 때 명확한 성능 향상이 관찰되었다.
-
-다만, 계산 리소스의 한계로 인해 모델 성능의 포화를 훈련 데이터셋의 크기의 함수로 테스트할 수는 없었다.
+최종적으로 CNN Benchmarking을 위해, $1.5 \times 10^6$ 개의 합성 스펙트럼을 생성하였고, 그 중에서 $1.2 \times 10^6$, $1.5 \times 10^5$, $1.5 \times 10^5$ 데이터는 훈련/검증/테스트를 위해 각각 사용되었다. 나중에는 데이터셋의 크기에 따른 성능향상 확인을 위해 데이터셋의 규모를 $10^7$으로 증가하였다.
 
 
-### 3.2 Iterative peak subtraction via trained CNN and basin-hopping optimization
+## Results
 
-우리가 만족할 만한 수준의 CNN 모델이 특성추출기로 준비된 이후에, XPS 스펙트럼으로부터 연속적인 특성 추출하는 단계로 들어갔다.
+### CNN Training and Validation
 
-다음 그림 6은 연구에서 고안된 Iterative Peak Fitting and Extraction 전략을 보여준다.
+다음 그림은 서로 다른 CNN 모델들의 훈련 및 검증과정에서의 MSE 손실함수의 변화를 보여준다. 4개의 목표변수들 사이에서 (특별히 중요한) Peak 중심위치의 손실함수가 같이 그려졌다.
 
-이러한 방식으로 특성을 추출할 때 잠재적인 문제는, 피크 피팅에서의 아주 작은 에러들조차도 스펙트럼 안의 wiggly하고 부정적인 특성들을 야기할 수 있다는 것이다. 추출 후에, 그것은 CNN에 의한 어떤 유의미한 피크로서는 실수일 수도 있었다.
+Peak의 위치는 특별히 가장 큰 오차를 만드는 경향이 있었다. 이는 실제 XPS 분석에서 Peak의 에너지 레벨을 추정하는 일이 가장 중요하다는 사실과 대응되는 것 같았다.
 
-이 문제는 다음과 같은 방식으로 피할 수 있었다.
+훈련 및 검증단계의 손실함수의 양상을 보면, 확실히 초창기 CNN 모델이었던 LeNet에서 m-SENet으로 갈수록 점진적인 손실의 감소가 일어나는 것이 명확하게 보인다. 이는 Computer Vision 분야에서 CNN 모델의 발전이 XPS와 같은 Task-Specific한 분야에서도 (약간의 수정이 있으면) 충분히 안정적인 성능을 보일 수 있음을 증명하는 것이었다. 특히 m-SENet은 Peak의 감지와 전반적인 Fitting 성능에 있어서 다른 모델보다 더 나은 표현력(Representation Power)을 보여주었다.
 
-1. 초기 셋팅에서 전체 피크의 수를 정확하게 결정하고 정확히 그 숫자만큼 추출하기
-2. 추출 이후의 음의 세기를 제거하는 방식 (그림 6의 왼쪽 아래 패널)
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/149705045-308737c9-e7ba-4968-8c35-972f6dc8df11.png">
+</p>
+<center><b>Figure 4. Total (upper row) and peak center loss functions (lower row) of six different CNN architectures, with respect to training epochs. Note that learning rate was reduced to 10% after 20th and 40th epochs. Mean-square error loss function was employed. Left and right columns show training and validation losses, respectively</b></center>
+<br>
 
-왜냐하면 피크 수 예측의 정확도는 상당히 높기 때문에, 대부분의 경우 전반적인 워크플로우를 추가적인 가짜 피크를 얻는 것으로부터 방해할 수 있었다.
+위 그림에서 보이는 훈련 및 검증 결과들은 MSE를 손실함수로 계산했을 때의 결과이다. 일반적으로 MSE는 회귀문제에서 모델을 직접적으로 학습하기 위한 손실함수로 자주 채택된다. 그러나 몇몇 경우에 MSE는 매우 작은 이상치(Outlier)의 효과를 과대평가하는 경향이 있었다. 이는 모델의 저조한 성능으로 이어질 수 있기에 종종 MAE가 더 나은 선택일 수도 있었다. 흥미롭게도 우리의 Peak Fitting 문제는 그러한 유형의 것으로 발견되었다.
 
-![그림5](https://user-images.githubusercontent.com/76824867/149705046-e3144065-cbe0-49f5-b466-b4894d37179d.png)
+즉, 모델의 학습/검증 과정에서 MSE/MAE 손실함수의 효과를 비교하기 위해, 동등한 환경에서 각각의 CNN 모델을 분리하고 MSE/MAE를 사용하여 각각 훈련시켰다. 이후 훈련된 모델을 테스트 데이터의 Fitting에 적용하고 MAE 손실값을 다시 계산하였다. 다음 그림 Figure 5는 그 결과를 보여준다.
 
-![그림6](https://user-images.githubusercontent.com/76824867/149705047-4cbecd9f-b5d3-4434-873d-129ee92ad318.png)
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/149705046-e3144065-cbe0-49f5-b466-b4894d37179d.png">
+</p>
+<center><b>Figure 5. MAE loss functions— a center, b number of peaks, c width, and d amplitude of the largest-area peak—of six different CNN architectures on the same test dataset. Blue and orange columns show results employing MSE and MAE
+losses during the network training and validation, respectively</b></center>
+<br>
 
-마지막으로, 주어진 하나의 스펙트럼에서 모든 Peak 특성들을 추출한 후에, 고전적인 전역최적화 방법들, 예를 들면 Basin-Hopping 알고리즘과 같은 것들이 Fitting 결과를 더욱 최적화하고 남은 에러를 최소수준까지 감소시키는 데 응용되었다.
+그림에서 4개의 목표변수 모두의 테스트 손실값은 모든 CNN 구조에서 MAE가 더 낮은 값을 보여주었다. 해당 결과로부터 MAE 훈련손실함수를 가진 SENet과 m-SENet이 이번 연구에서 거의 동등한 성능을 보인다는 것을 알 수 있었다. 
 
-Basin-Hopping 알고리즘은 향상된 Simulated Annealing 방법으로 간주될 수 있는데, 그것은 각 Iteration에서의 Accept/Reject 결정 이전 단계에서 추가적인 국소적 최적화 단계를 포함하는 알고리즘이다. 
+(사실 이 부분은 논문에 거의 똑같이 설명되어 있지만, 개인적으로 해석이 조금 이상하다고 생각한다. MSE와 MAE는 회귀오차를 계산하는 서로 다른 방법일 뿐이고, 오차 범위를 고려하면 손실함수의 성능과 무관하게 당연히 저런 결과가 나올 것 같다. 더구나 MAE가 MSE보다 회귀학습에서 뛰어난 성능을 보이는 경우는 많지 않다. 오래전에 Gauss가 증명했기 때문이다. 논문 1저자가 이러한 결과를 보여주었을 때, 분명 이상하다고 생각했고 이 부분에 이의를 제기했었다. 그러나 어째서인지 최종논문에 반영되지 않았고, 결국 JKPS 이전에 게재를 시도했던 보다 높은 수준의 두 저널에서 모두 Reject을 받았다. Reject을 받을 때 리뷰어의 Comment도 같이 첨부되어 있었는데, 내가 이상하다고 생각했던 부분이 그대로 지적되고 있었다. 나중에야 이런 일이 있었다는 것을 지도교수님께 말씀드렸지만 그때는 이미 늦은 뒤였다. ㅎㅎ;)
 
-다음 그림은 몇가지 테스트 데이터에 대해 최적화된 결과 샘플을 보여준다. 특히 (a)에서 반복적인 CNN의 응용은 꽤 좋은 결과를 보여주었다. 그림 (b)에서는 CNN은 목표 스펙트럼과 상대적으로 나쁜 일치를 보 이고 있다. 이 경우 Basin-Hopping 알고리즘이 추가적으로 작동하여 Residual error을 줄였다.
+다시 연구 이야기로 돌아가자. 
 
-![그림7](https://user-images.githubusercontent.com/76824867/149705048-8a66630d-93f5-4da9-af07-2386a68f024d.png)
+m-SENet이 Benchmark에서 최고의 성능을 보여주는 것을 확인한 후, 모델의 성능을 강화하기 위해 전체 데이터셋의 크기를 1.5에서 10 million scale로 증가시켰다. 
 
+아래의 Table 1은 1.5와 10 million 데이터셋으로 훈련된 m-SENet의 손실함수 결과를 비교해서 보여준다. 더 큰 훈련 데이터셋을 적용했을 때 명확한 성능 향상이 관찰되었다. 다만, 계산자원의 한계로 인해 모델성능의 포화를 훈련 데이터셋 크기의 함수로 테스트할 수는 없었다.
 
-최종적으로 여러가지 실제 XPS 시료에 대해 우리의 m-SENet이 예측하는 결과와 실제 정답의 비교를 실험하였다. 결과는 다음 그림과 같았다.
-
-![그림8](https://user-images.githubusercontent.com/76824867/149705038-2dd70aab-6e5f-4b90-9ef0-2079371b8f94.png)
-
-아마도 XPS 연구를 하는 사람들 입장에서는, 모델의 정교함이 그렇게까지 대단하지 않다고 말할 수도 있을 것 같다. 그러나 우리가 연구에서 보이고자 했던 것은, 오랜 기간 XPS 연구를 해온 연구원들의 도메인 지식이 개입되지 않고도, 딥러닝의 패턴인식만으로 XPS 스펙트럼에 대한 정보추출이 어느 수준까지 자동화될 수 있는가를 보려고 했던 것이기에 나름대로 만족할 만한 성과가 나왔다.
-
-
-## 5 Discussion and Conclusion
-
-이 연구에서 다음과 같은 의이가 있었다.
-
-Synthetic Dataset의 생성과정에서, Peak의 너비를 생성하는 물리적 과정에 대한 지식을 포함시키지 않았고, 임의로 선택한 범위 안에서 균등한 랜덤 파라미터로 간주하였다. 에너지 상에서 비슷하게 위치한 여기(Excitation)들은 유사한 Scattering 과정을 거쳐야 하므로, 주어진 에너지 범위에서의 실험적 광전자 Peak들의 대부분은 종종 유사한 피크 너비를 보여주었다. 데이터 생성과정에서 이러한 관측에 대한 고려는 모델의 성능을 뒷받침할 수 있었다.
-
-또한, 우리가 사용했던 Pseudo Voigt 함수 대신 다른 모델 함수를 적용하여 성능을 더욱 향상시킬 수도 있었다. 아마도 보다 효과적인 XPS 스펙트럼 분야에서의 모델함수를 사용한다면, Fitting 과정에서 Fake Peak들의 발생을 감소시킬수도 있었을 것이다.
-
-전반적으로 연구를 진행하는 동안, 운동량 도메인에서의 스펙트럼 데이터를 분석하는 프로세스에서 CNN의 잠재적인 성능을 경험할 수 있었다. 그리고 1차적으로 이루어졌으나 실패에 가까웠던 선행연구와 비교하여 모델의 Fitting 성능을 상당히 향상시킬 수 있었다.
-
-진보된 CNN 모델의 적용과, 반복적(Iterative)인 Peak 추출의 응용이 상당히 잘 작동되었다.
-
-또한 다양한 CNN 모델들의 Fitting 성과를 Benchmark하고, CNN 분야의 발전이 XPS 분야에서도 약간의 수정이 이루어진다면 충분히 유지된다는 것을 보일 수 있었다.
-
-최종적으로 우리가 제안한 m-SENet은 다른 모델들과 비교하여 최고의 성능을 보여주었고, 여기에는 고전적인 전역최적화 알고리즘의 도움도 컸다. 결과적으로 딥러닝 기반의 스펙트럼 분석은 훈련된 연구원의 도메인 지식 기반의 Fitting과 비교할만한, 또는 때로는 더 좋은 수준의 Fitting 성과를 내었다. 그리고 이러한 성과는 잠재적으로 최소한의 인간의 개입을 가진 대규모 스펙트럼 데이터 분석에 응용될 수도 있다.
-
-# References
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/175870179-e1724bc6-24da-4be0-9dc2-e414a22de950.PNG">
+</p>
+<center><b>Table 1</b></center>
+<br>
 
 
+
+### Iterative Peak Subtraction via Trained CNN and Basin-Hopping Optimization
+
+CNN Benchmark 단계가 끝난 이후, XPS 스펙트럼의 연속적인 특성을 추출하는 단계로 넘어갔다. 다음 그림 6은 연구에서 고안된 "Iterative Peak Fitting and Extraction" 전략을 보여준다.
+
+특성을 추출할 때 발생할 수 있는 잠재적인 문제는, Peak Fitting의 아주 작은 Error조차도 스펙트럼 안의 부정적인 특성을 야기할 수 있다는 것이었다. 또한 애초에 유의미한 Peak가 아닐수도 있었다.
+
+이 문제를 해결하기 위해 다음과 같은 방법을 사용하였다.
+
+1. 초기 스펙트럼에서 전체 Peak의 수를 정확하게 결정하고 정확히 그 숫자만큼만 Peak를 추출하기
+2. 추출 이후 Negative Intensity를 제거하기 (Figure 6의 왼쪽 아래 패널)
+
+Peak의 수를 예측하는 정확도는 상당히 높기 때문에, 대부분의 경우 추가적인 가짜 Peak를 추출하는 것을 방해할 수 있었다.
+
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/149705047-4cbecd9f-b5d3-4434-873d-129ee92ad318.png">
+</p>
+<center><b>Figure 6. An illustration of iterative peak fitting and subtraction scheme we employed in this study. In the upper left and lower right panels, red and blue curves depict CNN-fitted and exact peak features respectively. Negative intensity caused by subtraction of inaccurate peaks (upper right panel, below the red dashed line) is truncated before applying subsequent peak fitting and subtraction</b></center>
+<br>
+
+주어진 하나의 스펙트럼에서 모든 Peak 특성들을 추출한 후, 고전적인 전역최적화 방법인 Basin-Hopping 알고리즘을 사용하여 Fitting 결과를 더욱 최적화하고 남은 Error를 최소 수준까지 감소시켰다.
+
+여기서 Basin-Hopping 알고리즘은 향상된 Simulated Annealing 방법으로 생각할 수 있다. 즉, 각 Iteration에서의 Accept/Reject 결정 이전 단계에서 추가적인 국소적 최적화 단계를 포함하는 알고리즘이다. 이에 대해서는 다른 글에서 자세히 설명하도록 하겠다.
+
+다음 그림은 몇가지 테스트 데이터에 대해 최적화된 결과를 보여준다. (a)에서 반복적인 CNN의 응용은 꽤 좋은 결과를 보여주었다. (b)에서 CNN은 목표 스펙트럼과 상대적으로 나쁜 일치를 보이고 있다. 이 경우 Basin-Hopping 알고리즘이 추가적으로 작동하여 Residual Error을 감소시켰다.
+
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/149705048-8a66630d-93f5-4da9-af07-2386a68f024d.png">
+</p>
+<center><b>Figure 7. Comparison between peak fitting results before and after applying basin-hopping algorithm. Top (a, b) and bottom (c, d) rows show two different cases where the initial iterative CNN-fitting yield good and relative poor agreements with the target spectra, respectively, after which application of basinhopping algorithm reduces any residual errors to almost zero</b></center>
+<br>
+
+최종적으로 m-SENet을 실제 XPS 샘플에 적용하였고 예측결과를 실제와 비교하였다. 다음 그림 8을 보자.
+
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/149705038-2dd70aab-6e5f-4b90-9ef0-2079371b8f94.png">
+</p>
+<center><b>Figure 8. Human- (upper row) and machine-fitted (lower row) photoemission spectra of a graphene C 1s, b MoS2 Mo 3d, c MoS2 S 2p, d WS2 S 2p, and e WS2 W 4f. In each panel black, red, and green curves represent raw data with background signal subtracted, fitted spectrum, and residual signal, respectively, where fitted peaks are depicted as colored filled curves</b></center>
+<br>
+
+XPS 연구를 하는 사람들 입장에서는, 모델의 정교함이 그렇게 대단하지는 않다고 말할 수 있을 것 같다. 그러나 우리가 연구에서 보이고자 했던 것은 오랜 시간 XPS 연구를 수행한 연구자들의 도메인지식이 개입되지 않고도, 딥러닝 모델의 패턴인식만으로 XPS 스펙트럼에 대한 특성추출이 어느 정도까지 자동화될 수 있는가를 확인하려고 했던 것이므로 나름대로 만족할 만한 성과가 나왔다.
+
+다음 그림은 모델의 예측성능과 인간 연구원의 분석결과를 대조한 것이다.
+
+<br>
+<p align="center" style="color:gray">
+    <img src="https://user-images.githubusercontent.com/76824867/175870175-7deb1bce-0210-4df9-a574-8d81d942330b.PNG">
+</p>
+<center><b>Table 2</b></center>
+<br>
+
+
+
+## Conclusion
+
+연구에서 다소 아쉬운 점이 있다면 Synthetic Data의 생성과정에서, 표면현상에 대한 물리적 지식을 포함시키지 않고 임의로 선택한 범위 안에서 균등한 Random Parameter로 생성하였다는 것이다. 아마 내가 물리를 조금 더 잘했다면(..), 조금 더 실제현상을 모방하는 데이터를 만들 수 있었을지도 모른다. 또한, 우리가 사용한 Pseudo Voigt Function 대신 다른 모델함수를 적용할 수도 있었을 것 같다. 보다 효과적인 XPS 모델함수를 사용했다면, Fitting 과정에서의 Fake Peak의 발생을 억제할 수도 있었을 것이다.
+
+연구를 진행하는 동안, 운동량 도메인에서의 스펙트럼 데이터를 분석하는 CNN의 잠재적인 성능을 경험할 수 있었다. 1차로 진행되었으나 실패에 가까웠던 선행연구와 비교하면, 2차 연구에서는 모델의 Peak Fitting 성능이 상당히 발전되었다. 특히 진보된 CNN 모델의 적용과 Iterative한 방식으로 작동하는 특성추출의 응용이 상당히 잘 작동된 것 같다.
+
+정리하자면, 우리가 제안한 m-SENet 모델은 다른 CNN 모델들과 비교하여 더 우월한 성능을 보여주었다. 또한 Fitting Error를 최소화하는 과정에서 Basin-Hopping과 같은 전역최적화 알고리즘의 도움도 컸다. 
+
+결과적으로 딥러닝 기반의 XPS 스펙트럼 분석은 잘 훈련된 연구원의 도메인지식 기반의 Peak Fitting과 비교할만한 성과를 내었다. 이러한 성과는 미래에 최소한의 인간지식의 개입을 가진 대규모 스펙트럼 분석에 응용될 수도 있을 것이다.
+
+
+
+## References
+
+* Seong-Heum Park, Hyeongseon Park, Hyunbok Lee, Heung-Sik Kim
+J. Korean Phys. Soc. 79(12), 1199 - 1208 (2021)
+
+---
