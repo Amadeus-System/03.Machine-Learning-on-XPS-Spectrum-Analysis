@@ -1,8 +1,6 @@
 # 03.Machine-learning-on-XPS-spectrum
 Repository for my undergraduate paper for Machine learning analysis of XPS spectrum
 
-https://lelouch0316.tistory.com/entry/Iterative-Peak-Fitting-of-Frequency-Domain-Data-via-Deep-Convolution-Neural-Networks?category=1076241
-
 * **Date : 2022-01-02**
 * **Last Modified At : 2022-06-27**
 
